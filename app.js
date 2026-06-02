@@ -370,8 +370,9 @@ function buildForm(type, item, allowType) {
       <option value="http://${host}:1234">LM Studio (المنفذ 1234)</option>
       <option value="http://${host}:11434">Ollama (المنفذ 11434)</option>
     </select></div>`;
-    h += fieldText('url', 'عنوان الخادم (بدون ‎/v1)', Sami.url, true, 'http://localhost:1234');
-    h += fieldText('model', 'اسم النموذج (اتركيه فارغًا للاكتشاف التلقائي)', Sami.model, false, 'qwen2.5-7b-instruct');
+    h += switchRow('auto', 'اكتشاف رابط الذكاء تلقائيًا (موصى به)', Sami.auto);
+    h += fieldText('url', 'عنوان الخادم اليدوي (اختياري)', Sami.url, false, 'http://localhost:11434');
+    h += fieldText('model', 'اسم النموذج (اتركيه فارغًا للاكتشاف التلقائي)', Sami.model, false, 'qwen2.5:3b');
     h += switchRow('enabled', 'تفعيل المحادثة الذكية', Sami.enabled);
     h += switchRow('speak', 'نطق ردود سامي صوتيًا', Sami.speakReplies);
     return h;
@@ -463,11 +464,13 @@ function saveModal() {
   const f = new FormData($('#modal-form'));
   const g = (n) => (f.get(n) || '').toString().trim();
   if (type === 'settings') {
+    Sami.auto = f.get('auto') === 'on';
     Sami.url = (g('url') || '').replace(/\/+$/, '').replace(/\/v1$/, '');
     Sami.model = g('model');
     Sami.enabled = f.get('enabled') === 'on';
     Sami.speakReplies = f.get('speak') === 'on';
-    Sami.save(); closeModal(); Sami.ping();
+    Sami.save(); closeModal();
+    if (Sami.reconnect) Sami.reconnect(); else Sami.ping();
     toast('تم حفظ إعدادات الذكاء');
     return;
   }

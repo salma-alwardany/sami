@@ -6,18 +6,22 @@
    يعتمد على دوال app.js (store, normalize, extractDate, fmtFull ...)
    ================================================================= */
 
+// رابط يُنشره اللابتوب تلقائيًا ليعرف التطبيق عنوان الذكاء الحالي من أي مكان
+const AI_ENDPOINT_FEED = 'https://raw.githubusercontent.com/salma-alwardany/sami/main/ai-endpoint.txt';
+
 const Sami = {
   url: '',
   model: 'qwen2.5:3b',
   enabled: true,
   available: false,
   speakReplies: false,
+  auto: true,
   models: [],
   history: [],
 
   candidates() {
     const h = location.hostname || 'localhost';
-    return [`http://${h}:1234`, `http://${h}:11434`];
+    return [`http://${h}:11434`, `http://${h}:1234`, 'http://localhost:11434', 'http://127.0.0.1:11434'];
   },
   load() {
     try {
@@ -26,15 +30,34 @@ const Sami = {
       this.model = s.model || '';
       this.enabled = s.enabled !== false;
       this.speakReplies = !!s.speakReplies;
+      this.auto = s.auto !== false;
     } catch (e) { /* تجاهل */ }
   },
   save() {
-    localStorage.setItem('salma.sami', JSON.stringify({ url: this.url, model: this.model, enabled: this.enabled, speakReplies: this.speakReplies }));
+    localStorage.setItem('salma.sami', JSON.stringify({ url: this.url, model: this.model, enabled: this.enabled, speakReplies: this.speakReplies, auto: this.auto }));
   },
 
+  async fetchPublishedEndpoint() {
+    try {
+      const r = await fetchTimeout(AI_ENDPOINT_FEED + '?t=' + Date.now(), { cache: 'no-store' }, 4500);
+      if (r.ok) { const t = (await r.text()).trim(); if (/^https?:\/\//.test(t)) return t.replace(/\/+$/, ''); }
+    } catch (e) { /* تجاهل */ }
+    return '';
+  },
   async init() {
     this.load();
-    if (!this.url) await this.autodetect();
+    await this.reconnect();
+  },
+  async reconnect() {
+    // 1) في الوضع التلقائي: جرّب الرابط المنشور من اللابتوب (يعمل من أي مكان)
+    if (this.auto) {
+      const pub = await this.fetchPublishedEndpoint();
+      if (pub) { this.url = pub; await this.ping(); if (this.available) return; }
+      // 2) رجوع إلى الاكتشاف المحلي (مفيد على اللابتوب نفسه)
+      await this.autodetect();
+    } else if (!this.url) {
+      await this.autodetect();
+    }
     await this.ping();
   },
   async autodetect() {
