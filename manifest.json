@@ -1,0 +1,19 @@
+{
+  "name": "سامي — مساعد سلمى الشخصي",
+  "short_name": "سامي",
+  "description": "سامي: مساعد سلمى الشخصي لترتيب المواعيد والمهام والدراسة، مع تذكير ومحادثة صوتية وكتابية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f3f0",
+  "theme_color": "#5f6f86",
+  "categories": ["productivity", "education", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

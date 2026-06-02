@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5f6f86" />
+  <meta name="description" content="مساعد شخصي لترتيب المواعيد والمهام والدراسة مع تذكير ومحادثة صوتية وكتابية" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>سامي · مساعد سلمى</title>
+</head>
+<body>
+  <!-- ====== الترويسة ====== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-badge">
+          <img class="brand-logo" src="icons/logo.png" alt="لوجو سلمى" />
+        </span>
+        <div class="brand-text">
+          <h1 id="greeting">مرحبا سلمى</h1>
+          <p id="today-date">—</p>
+        </div>
+      </div>
+      <button id="btn-notify" class="icon-btn" title="تفعيل الإشعارات" aria-label="تفعيل الإشعارات">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="app">
+    <!-- ====== الرئيسية ====== -->
+    <section id="screen-home" class="screen active">
+      <div class="stats-row">
+        <div class="stat-card" data-go="tasks">
+          <span class="stat-num" id="stat-tasks">0</span>
+          <span class="stat-label">مهام اليوم</span>
+        </div>
+        <div class="stat-card" data-go="home">
+          <span class="stat-num" id="stat-appts">0</span>
+          <span class="stat-label">مواعيد قادمة</span>
+        </div>
+        <div class="stat-card" data-go="study">
+          <span class="stat-num" id="stat-exams">0</span>
+          <span class="stat-label">امتحانات قريبة</span>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head">
+          <h2>جدول اليوم</h2>
+          <span class="muted" id="home-day-name"></span>
+        </div>
+        <div id="home-today-list" class="list"></div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head">
+          <h2>القادم</h2>
+        </div>
+        <div id="home-upcoming-list" class="list"></div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><h2>أدوات</h2></div>
+        <div class="tools-row">
+          <button class="tool-btn" id="btn-week-report">
+            <svg viewBox="0 0 24 24"><path d="M8 2v3M16 2v3M3.5 9h17M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 14h4M8 17h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>تقرير الأسبوع</span>
+          </button>
+          <button class="tool-btn" id="btn-export">
+            <svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>حفظ نسخة</span>
+          </button>
+          <button class="tool-btn" id="btn-import">
+            <svg viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M5 21h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>استيراد نسخة</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== المهام ====== -->
+    <section id="screen-tasks" class="screen">
+      <div class="segmented" role="tablist">
+        <button class="seg active" data-cat="daily">يومية</button>
+        <button class="seg" data-cat="weekly">أسبوعية</button>
+        <button class="seg" data-cat="yearly">سنوية</button>
+        <button class="seg" data-cat="general">عامة</button>
+      </div>
+      <div id="tasks-list" class="list"></div>
+      <button class="btn-add-inline" data-add="task">+ إضافة مهمة جديدة</button>
+    </section>
+
+    <!-- ====== المسارات ====== -->
+    <section id="screen-tracks" class="screen">
+      <div id="tracks-view"></div>
+    </section>
+
+    <!-- ====== الدراسة ====== -->
+    <section id="screen-study" class="screen">
+      <div class="segmented" role="tablist">
+        <button class="seg active" data-study="exams">الامتحانات</button>
+        <button class="seg" data-study="courses">الكورسات</button>
+        <button class="seg" data-study="results">النتيجة</button>
+      </div>
+
+      <div id="study-exams" class="study-pane">
+        <div id="exams-list" class="list"></div>
+        <button class="btn-add-inline" data-add="exam">+ إضافة امتحان</button>
+      </div>
+
+      <div id="study-courses" class="study-pane hidden">
+        <div id="courses-list" class="list"></div>
+        <button class="btn-add-inline" data-add="course">+ إضافة كورس</button>
+      </div>
+
+      <div id="study-results" class="study-pane hidden">
+        <div id="results-summary"></div>
+        <div id="results-list" class="list"></div>
+        <button class="btn-add-inline" data-add="result">+ إضافة نتيجة مادة</button>
+      </div>
+    </section>
+
+    <!-- ====== القراءة ====== -->
+    <section id="screen-reading" class="screen">
+      <div class="segmented" role="tablist">
+        <button class="seg active" data-reading="books">الكتب</button>
+        <button class="seg" data-reading="log">سجل القراءة</button>
+      </div>
+
+      <div id="reading-books" class="reading-pane">
+        <div id="books-list" class="list"></div>
+        <button class="btn-add-inline" data-add="book">+ إضافة كتاب</button>
+      </div>
+
+      <div id="reading-log" class="reading-pane hidden">
+        <div id="reading-summary"></div>
+        <div id="reading-log-list" class="list"></div>
+        <button class="btn-add-inline" data-add="reading">+ تسجيل قراءة</button>
+      </div>
+    </section>
+
+    <!-- ====== المشتريات ====== -->
+    <section id="screen-shopping" class="screen">
+      <div class="segmented" role="tablist">
+        <button class="seg active" data-shop="todo">المطلوبة</button>
+        <button class="seg" data-shop="done">المُشتراة</button>
+        <button class="seg" data-shop="all">الكل</button>
+      </div>
+      <div id="shopping-list" class="list"></div>
+      <button class="btn-add-inline" data-add="purchase">+ إضافة مادة للمشتريات</button>
+    </section>
+
+    <!-- ====== المساعد ====== -->
+    <section id="screen-assistant" class="screen">
+      <div class="llm-bar">
+        <span id="llm-status" class="llm-status">جارٍ التحقق من النموذج…</span>
+        <button id="btn-llm-settings" class="llm-gear" type="button">إعدادات الذكاء</button>
+      </div>
+      <div id="chat" class="chat"></div>
+      <div class="chat-suggestions" id="chat-suggestions">
+        <button class="chip">ذكريني بامتحان الرياضيات يوم الأحد الساعة 9 صباحا</button>
+        <button class="chip">أضيفي مهمة مذاكرة الفيزياء غدا</button>
+        <button class="chip">ما مهامي اليوم؟</button>
+        <button class="chip">أضيفي كورس البرمجة يوم الثلاثاء الساعة 5 مساء</button>
+        <button class="chip">أضيفي مهمة وِرد القرآن في مسار القرآن</button>
+        <button class="chip">ما مساراتي؟</button>
+      </div>
+      <div class="chat-input">
+        <button id="btn-mic" class="icon-btn mic" title="تحدثي" aria-label="إدخال صوتي">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <input id="chat-text" type="text" placeholder="اكتبي أو تحدّثي مع سامي..." autocomplete="off" />
+        <button id="btn-send" class="icon-btn send" title="إرسال" aria-label="إرسال">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ====== شريط التنقل السفلي ====== -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="home">
+      <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>الرئيسية</span>
+    </button>
+    <button class="nav-btn" data-screen="tasks">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>المهام</span>
+    </button>
+    <button class="nav-btn" data-screen="tracks">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <span>المسارات</span>
+    </button>
+    <button class="nav-btn" data-screen="study">
+      <svg viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>الدراسة</span>
+    </button>
+    <button class="nav-btn" data-screen="reading">
+      <svg viewBox="0 0 24 24"><path d="M12 6.5C10.5 5 7.5 4.3 4 4.8v13c3.5-.5 6.5.2 8 1.7 1.5-1.5 4.5-2.2 8-1.7v-13c-3.5-.5-6.5.2-8 1.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6.5V19.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>القراءة</span>
+    </button>
+    <button class="nav-btn" data-screen="shopping">
+      <svg viewBox="0 0 24 24"><path d="M5 7h14l-1.4 10.3a2 2 0 0 1-2 1.7H8.4a2 2 0 0 1-2-1.7L5 7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span>المشتريات</span>
+    </button>
+    <button class="nav-btn" data-screen="assistant">
+      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>المساعد</span>
+    </button>
+  </nav>
+
+  <!-- ====== زر الإضافة العائم ====== -->
+  <button id="fab" class="fab" title="إضافة سريعة" aria-label="إضافة سريعة">
+    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+  </button>
+
+  <!-- ====== النافذة المنبثقة ====== -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modal-title">إضافة</h3>
+        <button class="icon-btn" data-close="1" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="modal-form" class="modal-form"></form>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" data-close="1">إلغاء</button>
+        <button type="submit" form="modal-form" class="btn primary">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== تقرير الأسبوع ====== -->
+  <div id="report" class="modal hidden">
+    <div class="modal-backdrop" data-close-report="1"></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>تقرير الأسبوع</h3>
+        <button class="icon-btn" data-close-report="1" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="report-nav">
+        <button id="report-prev" class="rep-nav-btn">‹ السابق</button>
+        <span id="report-range" class="muted"></span>
+        <button id="report-next" class="rep-nav-btn">التالي ›</button>
+      </div>
+      <div id="report-body"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" data-close-report="1">إغلاق</button>
+        <button type="button" class="btn primary" id="report-save">حفظ كملف على الحاسوب</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="import-file" accept="application/json,.json" hidden />
+
+  <!-- ====== التنبيه السريع ====== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js?v=18"></script>
+  <script src="llm.js?v=18"></script>
+</body>
+</html>
