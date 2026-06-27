@@ -1207,8 +1207,25 @@ function setHeader() {
   $('#today-date').textContent = fmtFull(todayISO());
 }
 
-/* ============ التقرير الأسبوعي ============ */
+/* ============ التقارير (أسبوعي / شهري) ============ */
 let reportOffset = 0;
+let reportMode = 'week';
+function buildMonthData(offset) {
+  const base = new Date();
+  const start = new Date(base.getFullYear(), base.getMonth() + offset, 1); start.setHours(0, 0, 0, 0);
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, 0); end.setHours(23, 59, 59, 999);
+  const inRange = (ms) => ms >= start.getTime() && ms <= end.getTime();
+  const inMonth = (iso) => { const t = new Date(iso + 'T00:00').getTime(); return t >= start.getTime() && t <= end.getTime(); };
+  const done = store.tasks.filter((t) => t.done && t.completedAt && inRange(t.completedAt));
+  const todo = store.tasks.filter((t) => !t.done && t.date && inMonth(t.date));
+  const events = [];
+  store.exams.filter((x) => x.date && inMonth(x.date)).forEach((x) => events.push({ kind: 'امتحان', title: x.subject, date: x.date, time: x.time }));
+  store.appointments.filter((a) => a.date && inMonth(a.date)).forEach((a) => events.push({ kind: 'موعد', title: a.title, date: a.date, time: a.time }));
+  events.sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+  const readPages = store.reading.filter((e) => inMonth(e.date)).reduce((s, e) => s + (parseFloat(e.pages) || 0), 0);
+  return { start, end, done, todo, events, readPages };
+}
+function monthLabel(d) { return d.toLocaleDateString(AR, { month: 'long', year: 'numeric' }); }
 function weekStartSat(d) {
   const x = stripTime(d);
   const diff = (x.getDay() - 6 + 7) % 7;
@@ -1236,21 +1253,49 @@ function weekLabel(start, end) {
   const e = end.toLocaleDateString(AR, { day: 'numeric', month: 'long' });
   return `${s} — ${e}`;
 }
+const repSec = (cls, title, items, render) => `<div class="rep-section ${cls}"><h4>${title} <span class="rep-meta">${items.length}</span></h4>${items.length ? items.map(render).join('') : '<div class="rep-empty">لا شيء</div>'}</div>`;
 function renderReport() {
+  if (reportMode === 'month') return renderMonthReport();
   const w = buildWeekData(reportOffset);
+  const t = $('#report-title'); if (t) t.textContent = 'التقرير الأسبوعي';
   $('#report-range').textContent = weekLabel(w.start, w.end) + (reportOffset === 0 ? ' (هذا الأسبوع)' : '');
-  const sec = (cls, title, items, render) => `<div class="rep-section ${cls}"><h4>${title} <span class="rep-meta">${items.length}</span></h4>${items.length ? items.map(render).join('') : '<div class="rep-empty">لا شيء</div>'}</div>`;
   const taskItem = (t) => `<div class="rep-item"><span>${esc(t.title)}</span><span class="rep-meta">${t.date ? relDate(t.date).label : catLabel(t.category)}</span></div>`;
   const nextItem = (n) => `<div class="rep-item"><span>${esc(n.kind)}: ${esc(n.title)}</span><span class="rep-meta">${relDate(n.date).label}${n.time ? ' • ' + fmtTime(n.time) : ''}</span></div>`;
   $('#report-body').innerHTML =
     `<div class="rep-readstat">صفحات مقروءة هذا الأسبوع: ${w.readPages}</div>` +
-    sec('done', 'ما تمّ إنجازه', w.done, taskItem) +
-    sec('todo', 'ما لم يتمّ بعد', w.todo, taskItem) +
-    sec('next', 'التالي (الأسبوع القادم)', w.next, nextItem);
+    repSec('done', 'ما تمّ إنجازه', w.done, taskItem) +
+    repSec('todo', 'ما لم يتمّ بعد', w.todo, taskItem) +
+    repSec('next', 'التالي (الأسبوع القادم)', w.next, nextItem);
 }
-function openReport() { reportOffset = 0; renderReport(); $('#report').classList.remove('hidden'); }
+function renderMonthReport() {
+  const m = buildMonthData(reportOffset);
+  const t = $('#report-title'); if (t) t.textContent = 'التقرير الشهري';
+  $('#report-range').textContent = monthLabel(m.start) + (reportOffset === 0 ? ' (هذا الشهر)' : '');
+  const taskItem = (t) => `<div class="rep-item"><span>${esc(t.title)}</span><span class="rep-meta">${t.date ? fmtDayMonth(t.date) : catLabel(t.category)}</span></div>`;
+  const evItem = (n) => `<div class="rep-item"><span>${esc(n.kind)}: ${esc(n.title)}</span><span class="rep-meta">${fmtDayMonth(n.date)}${n.time ? ' • ' + fmtTime(n.time) : ''}</span></div>`;
+  $('#report-body').innerHTML =
+    `<div class="rep-readstat">صفحات مقروءة هذا الشهر: ${m.readPages}</div>` +
+    repSec('done', 'ما تمّ إنجازه', m.done, taskItem) +
+    repSec('todo', 'مهام لم تتمّ', m.todo, taskItem) +
+    repSec('next', 'امتحانات ومواعيد الشهر', m.events, evItem);
+}
+function syncRepToggle() { document.querySelectorAll('[data-repmode]').forEach((b) => b.classList.toggle('active', b.dataset.repmode === reportMode)); }
+function openReport(mode) { reportMode = mode || 'week'; reportOffset = 0; syncRepToggle(); renderReport(); $('#report').classList.remove('hidden'); }
 function closeReport() { $('#report').classList.add('hidden'); }
+function monthReportToText(offset) {
+  const m = buildMonthData(offset == null ? reportOffset : offset);
+  const L = ['التقرير الشهري: ' + monthLabel(m.start), ''];
+  L.push('صفحات مقروءة هذا الشهر: ' + m.readPages, '');
+  L.push('• ما تمّ إنجازه (' + m.done.length + '):');
+  m.done.forEach((t) => L.push('   - ' + t.title)); if (!m.done.length) L.push('   (لا شيء)');
+  L.push('', '• مهام لم تتمّ (' + m.todo.length + '):');
+  m.todo.forEach((t) => L.push('   - ' + t.title + (t.date ? ' [' + t.date + ']' : ''))); if (!m.todo.length) L.push('   (لا شيء)');
+  L.push('', '• امتحانات ومواعيد الشهر (' + m.events.length + '):');
+  m.events.forEach((n) => L.push('   - ' + n.kind + ': ' + n.title + ' [' + n.date + (n.time ? ' ' + n.time : '') + ']')); if (!m.events.length) L.push('   (لا شيء)');
+  return L.join('\n');
+}
 function reportToText(offset) {
+  if (reportMode === 'month') return monthReportToText(offset);
   const w = buildWeekData(offset == null ? reportOffset : offset);
   const L = ['تقرير الأسبوع: ' + weekLabel(w.start, w.end), ''];
   L.push('صفحات مقروءة هذا الأسبوع: ' + w.readPages, '');
@@ -1274,8 +1319,13 @@ function downloadFile(name, content, type) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
 function saveReportFile() {
-  const w = buildWeekData(reportOffset);
-  downloadFile('تقرير-الأسبوع-' + dateToISO(w.start) + '.txt', reportToText());
+  if (reportMode === 'month') {
+    const m = buildMonthData(reportOffset);
+    downloadFile('تقرير-شهر-' + dateToISO(m.start).slice(0, 7) + '.txt', reportToText());
+  } else {
+    const w = buildWeekData(reportOffset);
+    downloadFile('تقرير-الأسبوع-' + dateToISO(w.start) + '.txt', reportToText());
+  }
   toast('تم حفظ التقرير على الحاسوب (مجلد التنزيلات)');
 }
 
@@ -1329,6 +1379,11 @@ document.addEventListener('click', (e) => {
       shopFilter = seg.dataset.shop;
       seg.parentElement.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b === seg));
       renderShopping();
+    } else if (seg.dataset.repmode) {
+      reportMode = seg.dataset.repmode;
+      reportOffset = 0;
+      seg.parentElement.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b === seg));
+      renderReport();
     }
     return;
   }

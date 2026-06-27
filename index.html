@@ -68,7 +68,7 @@
         <div class="tools-row">
           <button class="tool-btn" id="btn-week-report">
             <svg viewBox="0 0 24 24"><path d="M8 2v3M16 2v3M3.5 9h17M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 14h4M8 17h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <span>تقرير الأسبوع</span>
+            <span>التقارير</span>
           </button>
           <button class="tool-btn" id="btn-export">
             <svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -241,10 +241,14 @@
     <div class="modal-backdrop" data-close-report="1"></div>
     <div class="modal-card">
       <div class="modal-head">
-        <h3>تقرير الأسبوع</h3>
+        <h3 id="report-title">التقارير</h3>
         <button class="icon-btn" data-close-report="1" aria-label="إغلاق">
           <svg viewBox="0 0 24 24" width="20" height="20"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
+      </div>
+      <div class="segmented" role="tablist">
+        <button class="seg active" data-repmode="week">أسبوعي</button>
+        <button class="seg" data-repmode="month">شهري</button>
       </div>
       <div class="report-nav">
         <button id="report-prev" class="rep-nav-btn">‹ السابق</button>
@@ -264,7 +268,7 @@
   <!-- ====== التنبيه السريع ====== -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=19"></script>
-  <script src="llm.js?v=19"></script>
+  <script src="app.js?v=20"></script>
+  <script src="llm.js?v=20"></script>
 </body>
 </html>
