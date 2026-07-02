@@ -500,10 +500,50 @@ button { font-family: inherit; cursor: pointer; }
 .icon-chip.result.g-weak { background: #f6e3e1; color: #b15b54; }
 
 /* ====== أدوات الرئيسية ====== */
-.tools-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tools-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .tool-btn { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 7px; box-shadow: var(--shadow); color: var(--primary-d); font-weight: 700; font-size: 0.76rem; text-align: center; }
 .tool-btn svg { width: 24px; height: 24px; }
 .tool-btn:active { background: var(--primary-soft); transform: scale(0.97); }
+
+/* ====== التقويم ====== */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.cal-month { font-weight: 800; font-size: 1.05rem; color: var(--text); }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+.cal-weekdays span { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; font-weight: 600; color: var(--text);
+  cursor: pointer;
+  transition: background 0.12s, transform 0.1s;
+}
+.cal-cell:active { transform: scale(0.92); }
+.cal-cell.muted { color: var(--muted); opacity: 0.4; background: var(--surface-2); border-color: transparent; }
+.cal-cell.today { border-color: var(--primary); border-width: 2px; color: var(--primary-d); font-weight: 800; }
+.cal-cell.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.cal-cell .cal-dot {
+  position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--taupe);
+}
+.cal-cell.selected .cal-dot { background: #fff; }
+.cal-cell.selected .cal-cnt { background: #fff; color: var(--primary-d); }
+.cal-cell .cal-cnt {
+  position: absolute; top: 3px; left: 4px;
+  font-size: 0.6rem; font-weight: 800; color: #fff;
+  background: var(--primary); border-radius: 999px; min-width: 14px; height: 14px;
+  display: grid; place-items: center; padding: 0 3px;
+}
+.cal-detail { margin-top: 16px; }
+.cal-detail h4 { font-size: 0.95rem; margin-bottom: 10px; color: var(--primary-d); }
+.cal-detail .list { margin-bottom: 12px; }
+.cal-empty { text-align: center; color: var(--muted); font-size: 0.88rem; padding: 18px 8px; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 14px; }
+.cal-add { width: 100%; padding: 12px; border: 2px dashed var(--primary); background: var(--primary-soft); color: var(--primary-d); border-radius: 14px; font-weight: 700; font-size: 0.9rem; }
+.cal-add:active { background: #ddd6e0; }
 
 /* ====== تقرير الأسبوع ====== */
 .report-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }

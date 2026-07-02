@@ -524,6 +524,7 @@ function saveModal() {
   upsert(coll, obj);
   closeModal();
   refreshAll();
+  if (!$('#calendar').classList.contains('hidden')) renderCalendar();
   scheduleNativeReminders();
   toast(isEdit ? 'تم التحديث' : 'تمت الإضافة');
 }
@@ -1329,6 +1330,68 @@ function saveReportFile() {
   toast('تم حفظ التقرير على الحاسوب (مجلد التنزيلات)');
 }
 
+/* ============ التقويم الشهري التفاعلي ============ */
+let calOffset = 0;
+let calSelected = null;
+function dayItems(iso) {
+  const dow = new Date(iso + 'T00:00').getDay();
+  return {
+    tasks: store.tasks.filter((t) => t.date === iso),
+    appts: store.appointments.filter((a) => a.date === iso),
+    exams: store.exams.filter((x) => x.date === iso),
+    courses: store.courses.filter((c) => c.day !== '' && c.day != null && String(c.day) === String(dow)),
+    reading: store.reading.filter((r) => r.date === iso)
+  };
+}
+function dayCount(iso) {
+  const d = dayItems(iso);
+  return d.tasks.filter((t) => !t.done).length + d.appts.length + d.exams.length + d.courses.length;
+}
+function renderCalendar() {
+  const wd = $('#cal-weekdays');
+  if (wd) wd.innerHTML = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'].map((s) => `<span>${s}</span>`).join('');
+  const base = new Date();
+  const view = new Date(base.getFullYear(), base.getMonth() + calOffset, 1);
+  const y = view.getFullYear(), m = view.getMonth();
+  $('#cal-month').textContent = view.toLocaleDateString(AR, { month: 'long', year: 'numeric' });
+  const first = new Date(y, m, 1);
+  const gridStart = new Date(y, m, 1 - first.getDay());
+  const today = todayISO();
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const iso = dateToISO(d);
+    const cnt = dayCount(iso);
+    const cls = ['cal-cell'];
+    if (d.getMonth() !== m) cls.push('muted');
+    if (iso === today) cls.push('today');
+    if (iso === calSelected) cls.push('selected');
+    cells += `<div class="${cls.join(' ')}" data-cal-day="${iso}">${d.getDate()}${cnt ? `<span class="cal-cnt">${cnt}</span>` : ''}</div>`;
+  }
+  $('#cal-grid').innerHTML = cells;
+  renderCalDetail(calSelected);
+}
+function renderCalDetail(iso) {
+  const box = $('#cal-detail');
+  if (!box) return;
+  if (!iso) { box.innerHTML = ''; return; }
+  const d = dayItems(iso);
+  const heading = new Date(iso + 'T00:00').toLocaleDateString(AR, { weekday: 'long', day: 'numeric', month: 'long' });
+  const row = (label, meta) => `<div class="rep-item"><span>${esc(label)}</span><span class="rep-meta">${esc(meta || '')}</span></div>`;
+  let items = '';
+  d.exams.forEach((x) => items += row('امتحان ' + x.subject, x.time ? fmtTime(x.time) : ''));
+  d.appts.forEach((a) => items += row(a.title, (a.time ? fmtTime(a.time) : '') + (a.note ? ' • ' + a.note : '')));
+  d.courses.forEach((c) => items += row(c.name, 'محاضرة' + (c.time ? ' • ' + fmtTime(c.time) : '')));
+  d.tasks.forEach((t) => items += row((t.done ? '✓ ' : '') + t.title, t.time ? fmtTime(t.time) : catLabel(t.category)));
+  if (d.reading.length) { const p = d.reading.reduce((s, r) => s + (parseFloat(r.pages) || 0), 0); items += row('قراءة', p + ' صفحة'); }
+  const any = items !== '';
+  box.innerHTML = `<h4>${heading}</h4>` +
+    (any ? `<div class="list">${items}</div>` : `<div class="cal-empty">لا يوجد شيء في هذا اليوم.</div>`) +
+    `<button class="cal-add" data-cal-add="${iso}">+ أضيفي مهمة في هذا اليوم</button>`;
+}
+function openCalendar() { calOffset = 0; calSelected = todayISO(); renderCalendar(); $('#calendar').classList.remove('hidden'); }
+function closeCalendar() { $('#calendar').classList.add('hidden'); }
+
 /* ============ النسخ الاحتياطي على الحاسوب ============ */
 function exportData() {
   const data = { app: 'سامي - مساعد سلمى', version: 1, exportedAt: new Date().toISOString() };
@@ -1430,6 +1493,18 @@ $('#report-prev').addEventListener('click', () => { reportOffset--; renderReport
 $('#report-next').addEventListener('click', () => { reportOffset++; renderReport(); });
 $('#report-save').addEventListener('click', saveReportFile);
 document.addEventListener('click', (e) => { if (e.target.closest('[data-close-report]')) closeReport(); });
+
+// التقويم
+$('#btn-calendar').addEventListener('click', openCalendar);
+$('#cal-prev').addEventListener('click', () => { calOffset--; renderCalendar(); });
+$('#cal-next').addEventListener('click', () => { calOffset++; renderCalendar(); });
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-close-cal]')) { closeCalendar(); return; }
+  const day = e.target.closest('[data-cal-day]');
+  if (day) { calSelected = day.dataset.calDay; renderCalendar(); return; }
+  const add = e.target.closest('[data-cal-add]');
+  if (add) { openModal('task', { date: add.dataset.calAdd }, false); return; }
+});
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkReminders(); });
 
 /* ============ بدء التشغيل ============ */

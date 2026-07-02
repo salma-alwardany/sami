@@ -1,4 +1,4 @@
-const CACHE = 'salma-assistant-v25';
+const CACHE = 'salma-assistant-v26';
 const ASSETS = [
   './',
   './index.html',
