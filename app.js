@@ -20,16 +20,29 @@ const SVG = {
 
 /* ============ التخزين المحلي ============ */
 const KEYS = ['tasks', 'appointments', 'courses', 'exams', 'tracks', 'results', 'books', 'reading', 'purchases', 'notified'];
+// الأقسام التي تتزامن سحابيًا (كل شيء عدا notified الخاص بالجهاز)
+const SYNC_KEYS = ['tasks', 'appointments', 'courses', 'exams', 'tracks', 'results', 'books', 'reading', 'purchases'];
 const store = {};
 KEYS.forEach((k) => {
   try { store[k] = JSON.parse(localStorage.getItem('salma.' + k)) || []; }
   catch (e) { store[k] = []; }
 });
+try { store._deleted = JSON.parse(localStorage.getItem('salma._deleted')) || []; } catch (e) { store._deleted = []; }
 function persist(k) {
   if (k === 'notified' && store.notified.length > 300) store.notified = store.notified.slice(-200);
   localStorage.setItem('salma.' + k, JSON.stringify(store[k]));
+  if (k !== 'notified' && typeof Sync !== 'undefined' && Sync.onLocalChange) Sync.onLocalChange();
+}
+// سجل المحذوفات (لتنتشر عمليات الحذف بين الأجهزة)
+function tombstone(id) {
+  if (!id) return;
+  store._deleted = store._deleted.filter((t) => t.id !== id);
+  store._deleted.push({ id, at: Date.now() });
+  if (store._deleted.length > 600) store._deleted = store._deleted.slice(-500);
+  persist('_deleted');
 }
 function upsert(coll, obj) {
+  obj.updatedAt = Date.now();
   const arr = store[coll];
   const i = arr.findIndex((x) => x.id === obj.id);
   if (i >= 0) arr[i] = { ...arr[i], ...obj }; else arr.push(obj);
@@ -274,8 +287,9 @@ function renderTracks() {
   }
 }
 function deleteTrack(id) {
+  tombstone(id);
   store.tracks = store.tracks.filter((t) => t.id !== id);
-  store.tasks.forEach((t) => { if (t.track === id) t.track = ''; });
+  store.tasks.forEach((t) => { if (t.track === id) { t.track = ''; t.updatedAt = Date.now(); } });
   persist('tracks'); persist('tasks');
   if (currentTrack === id) currentTrack = null;
   refreshAll(); toast('تم حذف المسار');
@@ -325,6 +339,7 @@ function togglePurchase(id) {
   if (!p) return;
   p.bought = !p.bought;
   p.boughtAt = p.bought ? Date.now() : null;
+  p.updatedAt = Date.now();
   persist('purchases'); refreshAll();
 }
 function refreshAll() { updateStats(); renderHome(); renderTasks(); renderTracks(); renderStudy(); renderReading(); renderShopping(); }
@@ -535,6 +550,7 @@ function findItem(type, id) { return store[collOf(type)].find((x) => x.id === id
 function editItem(type, id) { const it = findItem(type, id); if (it) openModal(type, it, false); }
 function removeItem(type, id) {
   const coll = collOf(type);
+  tombstone(id);
   store[coll] = store[coll].filter((x) => x.id !== id);
   persist(coll); refreshAll(); toast('تم الحذف');
 }
@@ -543,6 +559,7 @@ function toggleTask(id) {
   if (!t) return;
   t.done = !t.done;
   t.completedAt = t.done ? Date.now() : null;
+  t.updatedAt = Date.now();
   persist('tasks'); refreshAll();
 }
 
@@ -835,14 +852,14 @@ function doComplete(norm) {
     let s = norm.includes(n) ? n.length : n.split(' ').filter((tk) => tk.length > 2 && norm.includes(tk)).length;
     if (s > score) { score = s; best = t; }
   }
-  if (best && score > 0) { best.done = true; best.completedAt = Date.now(); persist('tasks'); return `أحسنتِ! وضعتُ علامة الإنجاز على «${best.title}».`; }
+  if (best && score > 0) { best.done = true; best.completedAt = Date.now(); best.updatedAt = Date.now(); persist('tasks'); return `أحسنتِ! وضعتُ علامة الإنجاز على «${best.title}».`; }
   return 'لم أجد مهمة بهذا الاسم لإكمالها.';
 }
 function doDelete(norm) {
   const colls = [['tasks', 'title', 'المهمة'], ['appointments', 'title', 'الموعد'], ['exams', 'subject', 'الامتحان'], ['courses', 'name', 'الكورس']];
   for (const [coll, field, label] of colls) {
     const idx = store[coll].findIndex((it) => { const n = normalize(it[field] || ''); return n && norm.includes(n); });
-    if (idx >= 0) { const name = store[coll][idx][field]; store[coll].splice(idx, 1); persist(coll); return `حذفتُ ${label} «${name}».`; }
+    if (idx >= 0) { const it = store[coll][idx]; tombstone(it.id); store[coll].splice(idx, 1); persist(coll); return `حذفتُ ${label} «${it[field]}».`; }
   }
   return 'لم أجد العنصر المطلوب حذفه. اذكري اسمه كما هو مسجّل.';
 }
@@ -970,7 +987,7 @@ window.SamiActions = {
     const n = normalize(name);
     const p = (store.purchases || []).find((x) => !x.bought && normalize(x.name) === n) || (store.purchases || []).find((x) => !x.bought && (n.includes(normalize(x.name)) || normalize(x.name).includes(n)));
     if (!p) return 'لم أجد مادة بهذا الاسم في القائمة المطلوبة.';
-    p.bought = true; p.boughtAt = Date.now(); persist('purchases'); refreshAll();
+    p.bought = true; p.boughtAt = Date.now(); p.updatedAt = Date.now(); persist('purchases'); refreshAll();
     return `علّمت «${p.name}» كمشتراة`;
   },
   complete_task(a) { const r = doComplete(normalize(a.title || '')); refreshAll(); return r; },
@@ -1463,7 +1480,7 @@ document.addEventListener('click', (e) => {
   const logBook = e.target.closest('[data-log-book]');
   if (logBook) { openModal('reading', { bookId: logBook.dataset.logBook }); return; }
   const delReading = e.target.closest('[data-del-reading]');
-  if (delReading) { store.reading = store.reading.filter((x) => x.id !== delReading.dataset.delReading); persist('reading'); refreshAll(); toast('تم الحذف'); return; }
+  if (delReading) { tombstone(delReading.dataset.delReading); store.reading = store.reading.filter((x) => x.id !== delReading.dataset.delReading); persist('reading'); refreshAll(); toast('تم الحذف'); return; }
   const del = e.target.closest('.del');
   if (del) { const c = del.closest('.card'); removeItem(c.dataset.type, c.dataset.id); return; }
   const chk = e.target.closest('.check');

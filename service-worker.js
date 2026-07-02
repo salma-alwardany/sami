@@ -1,10 +1,12 @@
-const CACHE = 'salma-assistant-v26';
+const CACHE = 'salma-assistant-v27';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './app.js?v=18',
-  './llm.js?v=18',
+  './app.js?v=22',
+  './llm.js?v=22',
+  './firebase-config.js?v=22',
+  './firebase-sync.js?v=22',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'

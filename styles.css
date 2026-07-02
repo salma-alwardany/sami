@@ -500,6 +500,17 @@ button { font-family: inherit; cursor: pointer; }
 .icon-chip.result.g-weak { background: #f6e3e1; color: #b15b54; }
 
 /* ====== أدوات الرئيسية ====== */
+.sync-bar { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; margin-bottom: 10px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-weight: 700; font-size: 0.85rem; box-shadow: var(--shadow); }
+.sync-bar:active { transform: scale(0.99); }
+.sync-bar.on { color: var(--green); border-color: var(--green-soft); background: var(--green-soft); }
+.sync-bar.busy { color: var(--accent); }
+.sync-bar.off { color: var(--muted); }
+.sync-bar.err { color: var(--red); background: #f6e3e1; border-color: #f6e3e1; }
+.sync-bar svg { flex: none; }
+.sync-info { display: flex; align-items: center; gap: 12px; padding: 4px 2px 8px; }
+.sync-badge { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem; font-weight: 800; color: #fff; background: var(--muted); }
+.sync-badge.on { background: var(--green); }
+.sync-title { font-weight: 800; font-size: 1rem; }
 .tools-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .tool-btn { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 7px; box-shadow: var(--shadow); color: var(--primary-d); font-weight: 700; font-size: 0.76rem; text-align: center; }
 .tool-btn svg { width: 24px; height: 24px; }
